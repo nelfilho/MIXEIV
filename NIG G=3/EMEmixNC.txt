@@ -1,0 +1,52 @@
+
+###################################################################
+### MODELO DE REGRESSÃO COM ERRO PARA MISTURAS  DE NC ###
+###################################################################
+
+### GERANDO VEROSSIMILHANÇA ###
+
+model
+{
+  
+  for(i in 1:n){
+    w[i] ~ dcat(peso[] )    
+    x[i] ~ dnorm(mean.x[i],prec.x[i])
+    mean.x[i] <- mu[w[i]]
+    prec.x[i] <- u[i]*igamma2[w[i]]
+    
+    u.star[i] ~ dbern(rho)  
+    u[i] <- tau*u.star[i]+(1-u.star[i])
+    
+    for(j in 1:p){
+      mean.z[i,j] <- a[j]+b[j]*x[i]
+      prec.z[i,j] <- iOmega[j]*u[i]
+      z[i,j] ~ dnorm(mean.z[i, j], prec.z[i,j])
+    }
+  }
+  
+  ### GERANDO DENSIDADES A PRIORI ###
+  
+  b[1] <- 1
+  a[1] <- 0
+  peso[1:G] ~ ddirch(theta[])
+  
+  for(k in 2:p){
+    b[k] ~ dnorm(0.0,0.001) 	#beta
+    a[k] ~ dnorm(0.0,0.001)	#alpha
+  }
+  
+  for(l in 1:p){
+    iOmega[l] ~ dgamma(1, 0.01)
+    Omega[l] <- 1/iOmega[l]
+  }			
+  
+  for (j in 1:G){
+    gamma2[j] <- 1/igamma2[j]
+    igamma2[j] ~ dgamma(2,f)
+    mu[j] ~ dnorm(0, 0.001)
+  }
+  
+  f ~ dgamma(0.1,0.1) 
+  rho ~ dbeta(1,1)
+  tau ~ dbeta(2,2)
+}

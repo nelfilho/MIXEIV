@@ -1,0 +1,51 @@
+
+###################################################################
+### MODELO DE REGRESSÃO COM ERRO PARA MISTURAS  DE T ###
+###################################################################
+
+### GERANDO VEROSSIMILHANÇA ###
+
+model
+{
+
+	for(i in 1:n){
+	   	w[i] ~ dcat(peso[] )    
+		x[i] ~ dnorm(mean.x[i],prec.x[i])
+        	mean.x[i] <- mu[w[i]]
+        	prec.x[i] <- u[i]*igamma2[w[i]]
+        	u[i] ~ dgamma(nu1, nu1)       # t-Student
+
+		for(j in 1:p){
+			mean.z[i,j] <- a[j]+b[j]*x[i]
+			prec.z[i,j] <- iOmega[j]*u[i]
+			z[i,j] ~ dnorm(mean.z[i, j], prec.z[i,j])
+		}
+	}
+
+### GERANDO DENSIDADES A PRIORI ###
+
+	b[1] <- 1
+	a[1] <- 0
+	peso[1:G] ~ ddirch(theta[])
+
+	for(k in 2:p){
+		b[k] ~ dnorm(0.0,0.01) 	#beta
+		a[k] ~ dnorm(0.0,0.01)	#alpha
+        }
+
+	for(l in 1:p){
+		iOmega[l] ~ dgamma(0.01, 0.01)
+		Omega[l] <- 1/iOmega[l]
+      	}			
+			
+	for (j in 1:G){
+		gamma2[j] <- 1/igamma2[j]
+                igamma2[j] ~ dgamma(1,f)
+		mu[j] ~ dnorm(0, 0.01)
+	}
+ 
+	nu  ~ dexp(lambda)      # t-Student
+	nu1 <- 0.5*nu      	    # t-Student
+	f ~ dgamma(0.1,0.1)  
+	lambda ~ dunif(ll,mm)
+}
